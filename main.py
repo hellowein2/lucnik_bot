@@ -1,9 +1,11 @@
 import asyncio
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup
 from aiogram import Dispatcher, Bot, F
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters.command import CommandStart
+from aiogram.fsm.state import StatesGroup, State
 from os import getenv
 from sqlalchemy import Column, Integer, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -49,13 +51,19 @@ async def get_all_users_id(session: AsyncSession):
     result = await session.execute(select(User.chat_id))
     return [row[0] for row in result.all()]
 
+
+async def save_link(message: Message):
+    await message.answer(text=message.text)
+
+
 @dp.message(CommandStart())
 async def start(message: Message):
     async with AsyncSessionLocal() as session:
         admin = await session.get(Admin, message.chat.id)
         if admin:
             button = [
-                [KeyboardButton(text='Я покурил нахуй!')]
+                [KeyboardButton(text='Я покурил нахуй!')],
+                [KeyboardButton(text='Анонс стрима')],
             ]
             kb = ReplyKeyboardMarkup(keyboard=button, resize_keyboard=True, one_time_keyboard=False)
             await message.answer('Привет, ты админ', reply_markup=kb)
@@ -67,8 +75,13 @@ async def start(message: Message):
             await session.commit()
         await message.answer('привет додик')
 
-
-
+@dp.message(F.text == 'Анонс стрима')
+async def link_broadcast(message: Message, state: FSMContext):
+    async with AsyncSessionLocal() as session:
+        admin = await session.get(Admin, message.chat.id)
+        if admin:
+            await message.answer('Пришли время и ссылку')
+            await state.set_state(message.chat.id)
 @dp.message(F.text == 'Я покурил нахуй!')
 async def broadcast(message: Message):
     async with AsyncSessionLocal() as session:
