@@ -50,18 +50,20 @@ async def init_db():
 async def start(message: Message):
     async with AsyncSessionLocal() as session:
         admin = await session.get(Admin, message.chat.id)
-        if not admin:
-            user = await session.get(User, message.chat.id)
-            if not user:
-                new_user = User(chat_id=message.chat.id)
-                session.add(new_user)
-                await session.commit()
-            await message.answer('привет додик')
-        button = InlineKeyboardButton(text='Я покурил нахуй!', callback_data='start_broadcast')
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [button]
-        ])
-        await message.reply('Привет, ты админ', reply_markup=keyboard)
+        if admin:
+            button = InlineKeyboardButton(text='Я покурил нахуй!', callback_data='start_broadcast')
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [button]
+            ])
+            await message.reply('Привет, ты админ', reply_markup=keyboard)
+            return
+        user = await session.get(User, message.chat.id)
+        if not user:
+            new_user = User(chat_id=message.chat.id)
+            session.add(new_user)
+            await session.commit()
+        await message.answer('привет додик')
+
 
 
 async def main():
