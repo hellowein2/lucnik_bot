@@ -55,7 +55,7 @@ async def start(message: Message):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [button]
             ])
-            await message.reply('Привет, ты админ', reply_markup=keyboard)
+            await message.answer('Привет, ты админ', reply_markup=keyboard)
             return
         user = await session.get(User, message.chat.id)
         if not user:
