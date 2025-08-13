@@ -17,7 +17,6 @@ async def start(message: Message):
     await message.answer('привет додик')
 
 
-
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await dp.start_polling(bot)
