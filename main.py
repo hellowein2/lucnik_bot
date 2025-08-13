@@ -1,5 +1,5 @@
 import asyncio
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram import Dispatcher, Bot
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
@@ -49,12 +49,17 @@ async def init_db():
 @dp.message(CommandStart())
 async def start(message: Message):
     async with AsyncSessionLocal() as session:
-        user = await session.get(User, message.chat.id)
-        if not user:
-            new_user = User(chat_id=message.chat.id)
-            session.add(new_user)
-            await session.commit()
-    await message.answer('привет додик')
+        admin = await session.get(Admin, message.chat.id)
+        if not admin:
+            user = await session.get(User, message.chat.id)
+            if not user:
+                new_user = User(chat_id=message.chat.id)
+                session.add(new_user)
+                await session.commit()
+            await message.answer('привет додик')
+        kb = InlineKeyboardMarkup()
+        kb.add(InlineKeyboardButton(text='Я покурил нахуй', callback_data='start_broadcast'))
+        await message.answer('Привет, ты админ')
 
 
 async def main():
