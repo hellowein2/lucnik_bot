@@ -59,7 +59,7 @@ async def start(message: Message):
             await message.answer('привет додик')
         kb = InlineKeyboardMarkup()
         kb.add(InlineKeyboardButton(text='Я покурил нахуй', callback_data='start_broadcast'))
-        await message.answer('Привет, ты админ')
+        await message.reply('Привет, ты админ', reply_markup=kb)
 
 
 async def main():
