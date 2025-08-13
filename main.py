@@ -1,13 +1,14 @@
 import asyncio
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
-from aiogram import Dispatcher, Bot
+from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup
+from aiogram import Dispatcher, Bot, F
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
-from aiogram.filters import CommandStart
+from aiogram.filters.command import CommandStart
 from os import getenv
-from sqlalchemy import Column, Integer
+from sqlalchemy import Column, Integer, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
+
 
 TOKEN = getenv("TOKEN")
 ADMIN_ID = getenv("ADMIN_ID")
@@ -44,7 +45,9 @@ async def init_db():
             session.add(new_admin)
             await session.commit()
 
-
+async def get_all_users_id(session: AsyncSession):
+    result = await session.execute(select(User.chat_id))
+    return [row[0] for row in result.all()]
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -52,9 +55,9 @@ async def start(message: Message):
         admin = await session.get(Admin, message.chat.id)
         if admin:
             button = [
-                KeyboardButton(text='Я покурил нахуй!')
+                [KeyboardButton(text='Я покурил нахуй!')]
             ]
-            kb = ReplyKeyboardMarkup(keyboard=button, resize_keyboard=True, one_time_keyboard=True)
+            kb = ReplyKeyboardMarkup(keyboard=button, resize_keyboard=True, one_time_keyboard=False)
             await message.answer('Привет, ты админ', reply_markup=kb)
             return
         user = await session.get(User, message.chat.id)
@@ -64,6 +67,17 @@ async def start(message: Message):
             await session.commit()
         await message.answer('привет додик')
 
+
+
+@dp.message(F.text == 'Я покурил нахуй!')
+async def broadcast(message: Message):
+    async with AsyncSessionLocal() as session:
+        admin = await session.get(Admin, message.chat.id)
+        if admin:
+            users_id = await get_all_users_id(session)
+            for user_id in users_id:
+                await bot.send_message(text='Жора покурил!\nhttps://www.youtube.com/live/hZqIdUvymqI', chat_id=user_id)
+                await asyncio.sleep(0.05)
 
 
 async def main():
