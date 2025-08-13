@@ -52,7 +52,7 @@ async def start(message: Message):
         admin = await session.get(Admin, message.chat.id)
         if admin:
             button = [
-                KeyboardButton(text='Я покурил нахуй!', callback_data='start_broadcast')
+                KeyboardButton(text='Я покурил нахуй!')
             ]
             kb = ReplyKeyboardMarkup(keyboard=button, resize_keyboard=True, one_time_keyboard=True)
             await message.answer('Привет, ты админ', reply_markup=kb)
