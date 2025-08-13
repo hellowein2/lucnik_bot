@@ -57,9 +57,11 @@ async def start(message: Message):
                 session.add(new_user)
                 await session.commit()
             await message.answer('привет додик')
-        kb = InlineKeyboardMarkup(inline_keyboard=[])
-        kb.add(InlineKeyboardButton(text='Я покурил нахуй', callback_data='start_broadcast'))
-        await message.reply('Привет, ты админ', reply_markup=kb)
+        button = InlineKeyboardButton(text='Я покурил нахуй!', callback_data='start_broadcast')
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [button]
+        ])
+        await message.reply('Привет, ты админ', reply_markup=keyboard)
 
 
 async def main():
