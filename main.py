@@ -1,4 +1,6 @@
 import asyncio
+
+from aiogram.exceptions import TelegramForbiddenError, TelegramNotFound
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup
 from aiogram import Dispatcher, Bot, F
@@ -61,8 +63,6 @@ async def get_link(session: AsyncSession):
     result = await session.execute(select(Link.link))
     return [row[0] for row in result.all()]
 
-async def save_link(message: Message):
-    await message.answer(text=message.text)
 
 
 @dp.message(CommandStart())
@@ -93,20 +93,28 @@ async def link_broadcast(message: Message, state: FSMContext):
             await state.set_state(Link_state.Link_waiting
                                   )
 @dp.message(F.text == 'Я покурил нахуй!')
-async def broadcast(message: Message):
+async def broadcast(message: Message, state=FSMContext):
     async with AsyncSessionLocal() as session:
         admin = await session.get(Admin, message.chat.id)
         if admin:
+            if await state.get_state() == Link_state.Link_waiting:
+                await state.clear()
             link = await get_link(session)
             users_id = await get_all_users_id(session)
             if link:
                 for user_id in users_id:
-                    await bot.send_message(text=f'Жора покурил!\n{link[0]}', chat_id=user_id)
-                    await asyncio.sleep(0.05)
+                    try:
+                        await bot.send_message(text=f'Жора покурил!\n{link[0]}', chat_id=user_id)
+                        await asyncio.sleep(0.05)
+                    except (TelegramForbiddenError, TelegramNotFound):
+                        await session.execute(delete(User).where(User.chat_id == user_id))
             else:
                 for user_id in users_id:
-                    await bot.send_message(text=f'Жора покурил!', chat_id=user_id)
-                    await asyncio.sleep(0.05)
+                    try:
+                        await bot.send_message(text=f'Жора покурил!', chat_id=user_id)
+                        await asyncio.sleep(0.05)
+                    except (TelegramForbiddenError, TelegramNotFound):
+                        await session.execute(delete(User).where(User.chat_id == user_id))
             await message.answer(text='Отправил!')
 
 
@@ -116,8 +124,11 @@ async def save_link(message: Message, state: FSMContext):
         new_link = Link(link=message.text)
         users_id = await get_all_users_id(session)
         for user_id in users_id:
-            await bot.send_message(text=message.text, chat_id=user_id)
-            await asyncio.sleep(0.05)
+            try:
+                await bot.send_message(text=message.text, chat_id=user_id)
+                await asyncio.sleep(0.05)
+            except (TelegramForbiddenError, TelegramNotFound):
+                await session.execute(delete(User).where(User.chat_id == user_id))
         await session.execute(delete(Link))
         session.add(new_link)
         await session.commit()
